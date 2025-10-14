@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>VIDA Internal Apps</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Fira Code', monospace;
+            background: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 2em;
+        }
+
+        .portal-icon {
+            display: block;
+            margin: auto;
+            height: 80px;
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2em;
+            font-size: 2rem;
+            color: #00d7ff;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: -3.5em;
+            margin-bottom: 2em;
+            font-size: 1rem;
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1em;
+            justify-content: center;
+            margin-bottom: 1.5em;
+        }
+
+        .tab {
+            padding: 0.5em 1em;
+            cursor: pointer;
+            border-radius: 6px;
+            background: #1c1c1c;
+            font-weight: 600;
+            color: #00d7ff;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            background: #00d7ff;
+            color: #121212;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5em;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #1c1c1c;
+            border-left: 4px solid #00d7ff;
+            border-radius: 8px;
+            padding: 1.2em 1em;
+            text-align: center;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 10px rgba(0, 215, 255, 0.3);
+        }
+
+        .card a {
+            text-decoration: none;
+            color: #00d7ff;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: block;
+            margin-bottom: 0.3em;
+        }
+
+        .card a:hover {
+            color: #00aabb;
+        }
+
+        .description {
+            font-size: 0.85rem;
+            color: #aaa;
+            line-height: 1.4;
+        }
+    </style>
+
+</head>
+
+<body>
+    <img class="portal-icon" src="assets/portal-icon.png">
+    <h1>Portal</h1>
+    <h2>A Gateway to All Your Dev Tools</h4>
+    <div id="tabs" class="tabs"></div>
+    <div id="apps-container"></div>
+
+    <script>
+        fetch('/api/apps', { credentials: 'include' })
+            .then(res => res.json())
+            .then(apps => {
+                const tabsContainer = document.getElementById('tabs');
+                const appsContainer = document.getElementById('apps-container');
+                const envMap = {};
+
+                // Build envMap: environment -> apps
+                apps.forEach(app => {
+                    if (!app.Env) return;
+                    app.Env.forEach(envObj => {
+                        for (const envName in envObj) {
+                            const envDetails = envObj[envName];
+                            if (!envMap[envName]) envMap[envName] = [];
+                            envMap[envName].push({
+                                name: app.name,
+                                description: app.description,
+                                upstream: envDetails.upstream
+                            });
+                        }
+                    });
+                });
+
+                const envNames = Object.keys(envMap);
+
+                // Render tabs
+                envNames.forEach((envName, index) => {
+                    const tab = document.createElement('div');
+                    tab.className = 'tab' + (index === 0 ? ' active' : '');
+                    tab.textContent = envName.toUpperCase();
+                    tab.dataset.env = envName;
+
+                    tab.addEventListener('click', () => {
+                        // Remove active from all tabs
+                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        renderApps(envName);
+                    });
+
+                    tabsContainer.appendChild(tab);
+                });
+
+                renderApps(envNames[0]);
+
+                function renderApps(envName) {
+                    appsContainer.innerHTML = '';
+                    const grid = document.createElement('div');
+                    grid.className = 'grid';
+
+                    envMap[envName].forEach(app => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.innerHTML += `<a href="${app.upstream}" target="_blank">${app.name}</a>`;
+                        card.innerHTML += `<p class="description">${app.description}</p>`;
+                        grid.appendChild(card);
+                    });
+
+                    appsContainer.appendChild(grid);
+                }
+            })
+            .catch(() => {
+                document.body.innerHTML = "<p>Not authorized or no apps available.</p>";
+            });
+    </script>
+
+    <!-- Tiny easter egg button -->
+    <div id="easter-egg" style="
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: #1c1c1c;
+    color: #00d7ff;
+    padding: 0.3em 0.6em;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,215,255,0.3);
+    transition: all 0.3s ease;
+    z-index: 9999;
+    overflow: hidden;
+    white-space: nowrap;">💡 About</div>
+
+    <script>
+        const easterEgg = document.getElementById('easter-egg');
+        let expanded = false;
+        const message = ' Built with HTML/CSS. Backend? Go. Auth? DexIDP. Crafted with a nudge from ChatGPT.';
+
+        easterEgg.addEventListener('click', () => {
+            expanded = !expanded;
+            if (expanded) {
+                easterEgg.style.width = 'auto';
+                easterEgg.style.padding = '0.3em 1em';
+                easterEgg.textContent = '💡' + message;
+            } else {
+                easterEgg.style.width = 'auto';
+                easterEgg.style.padding = '0.3em 0.6em';
+                easterEgg.textContent = '💡 About';
+            }
+        });
+
+        easterEgg.addEventListener('mouseenter', () => {
+            easterEgg.style.background = '#00d7ff';
+            easterEgg.style.color = '#121212';
+        });
+        easterEgg.addEventListener('mouseleave', () => {
+            easterEgg.style.background = '#1c1c1c';
+            easterEgg.style.color = '#00d7ff';
+        });
+    </script>
+
+</body>
+
+</html>

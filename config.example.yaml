@@ -1,0 +1,8 @@
+apps:
+  - name: My Wiki
+    description: Foo Bar Wiki
+    env:
+      - dev:
+          upstream: https://wiki.example.com
+          groups: ["devs@example.com", "devops@example.com"]
+          emails: ["alex@example.com"]
