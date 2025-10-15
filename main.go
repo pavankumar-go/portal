@@ -63,6 +63,7 @@ var (
 	googleSAJSON           *string
 	cookieDomain           *string
 	googleImpersonateAdmin *string
+	authHandlerPath        *string
 
 	configData Config
 	tpl        *template.Template
@@ -341,7 +342,7 @@ func getUserGroups(ctx context.Context, userEmail string) ([]string, error) {
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// allow public paths
-		if r.URL.Path == "/login" || r.URL.Path == "/callback" || r.URL.Path == "/vida/auth" || r.URL.Path == "/assets/portal-icon.png" {
+		if r.URL.Path == "/login" || r.URL.Path == "/callback" || r.URL.Path == *authHandlerPath || r.URL.Path == "/assets/portal-icon.png" {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -400,11 +401,11 @@ func main() {
 	clientSecret = flag.String("client-secret", "JOdFlI3pQp50HaL5W057X+D3SNQ7PnrD0Kt7q5It6YGBYK0", "dex client secret")
 	redirectURL = flag.String("callback-url", "http://localhost:8080/callback", "callback url")
 	googleSAJSON = flag.String("google-sa-json", "google-sa.json", "google service account json")
-	googleImpersonateAdmin = flag.String("google-impersonate-admin", "admin@vida.id", "an admin user to impersonate")
+	googleImpersonateAdmin = flag.String("google-impersonate-admin", "admin@example.id", "an admin user to impersonate")
 	cookieDomain = flag.String("cookie-domain", "", "cookie domain")
 
 	configPath := flag.String("config", "config.yaml", "app config")
-	authHandlerPath := flag.String("auth-handler-path", "/ingress/auth", "custom path for nginx.ingress.kubernetes.io/auth-url")
+	authHandlerPath = flag.String("auth-handler-path", "/ingress/auth", "custom path for nginx.ingress.kubernetes.io/auth-url")
 
 	flag.Parse()
 	loadConfig(*configPath)
@@ -451,11 +452,9 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		email := "-"
 		if c, err := r.Cookie("id_token"); err == nil {
 			if idTok, err := idVerifier.Verify(r.Context(), c.Value); err == nil {
-				claims := map[string]interface{}{}
+				claims := Claims
 				_ = idTok.Claims(&claims)
-				if e, ok := claims["email"].(string); ok {
-					email = e
-				}
+				email = claims.Email
 			}
 		}
 		log.Printf("%s %s from %s (user=%s)", r.Method, r.URL.Path, r.RemoteAddr, email)
