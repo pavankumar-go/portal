@@ -85,3 +85,6 @@ The Claims Headers returned after authorization allows you to pass specific user
 | **Go Portal**     | 🔒 Authorization          | Determines *which apps/environments* the user can access based on `config.yaml` |
 | **Ingress-NGINX** | 🚪 Enforcement            | Forwards requests to `/ingress/auth`; only routes if the user is authorized     |
 | **Internal Apps** | 🧰 Target Systems         | Actual dashboards & tools (ArgoCD, Grafana, Kafka UI, etc.)                     |
+
+### Sequence Diagram:
+![Sequence Diagram](plantuml.png)
