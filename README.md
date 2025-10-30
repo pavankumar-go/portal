@@ -43,6 +43,9 @@ apps:
         groups:
           - "infraops@example.com"
           - "engineering@example.com"
+        emails:
+          - "alice@example.com"
+          - "bob@example.com"
       - name: qa
         upstream: https://internal-argocd.qa.example.com
         groups:
