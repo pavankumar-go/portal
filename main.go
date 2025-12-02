@@ -279,6 +279,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	groups, err := getUserGroups(context.Background(), claims.Email)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "internal error while fetching groups", http.StatusInternalServerError)
 		return
 	}
@@ -299,7 +300,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   60,
+		MaxAge:   0,             // session cookie
 		Domain:   *cookieDomain, // what URLs the cookies are sent to
 	}
 
@@ -408,6 +409,7 @@ func main() {
 	authHandlerPath = flag.String("auth-handler-path", "/ingress/auth", "custom path for nginx.ingress.kubernetes.io/auth-url")
 
 	flag.Parse()
+
 	loadConfig(*configPath)
 
 	oidcProv, err := getOIDCProvider(*issuer)

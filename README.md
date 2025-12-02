@@ -12,6 +12,10 @@ It provides **centralized login, RBAC, and discovery** of all engineering dashbo
 Users authenticate once and gain access to all authorized apps without remembering ingress URLs.
 ---
 
+### How it looks:
+![Sequence Diagram](portal-homepage.png)
+
+
 ## How It Works
 
 1. **Dex** authenticates users via Google Workspace (OIDC).  
@@ -60,6 +64,31 @@ apps:
 ## Ingress Integration Example
 Attach these annotations to any internal app’s Ingress:
 ```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/auth-response-headers: Set-Cookie, X-Portal-Claim-Name, X-Portal-Claim-Email, X-Portal-Claim-Groups
+    nginx.ingress.kubernetes.io/auth-signin: https://portal.yourdomain.com/login
+    nginx.ingress.kubernetes.io/auth-url: https://portal.yourdomain.com/auth
+  name: rundeck
+  namespace: rundeck
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: int-rundeck.prod.vida.id
+    http:
+      paths:
+      - backend:
+          service:
+            name: rundeck-backend
+            port:
+              name: rundeck
+        path: /
+        pathType: ImplementationSpecific
+  ...
+  ...
+  ...
 nginx.ingress.kubernetes.io/auth-response-headers: "Set-Cookie" # Also provides "X-Portal-Jwt-Assertion, X-Portal-Claim-Email,X-Portal-Claim-Groups,X-Portal-Claim-Name"
 nginx.ingress.kubernetes.io/auth-signin: "https://portal.example.com/login"
 nginx.ingress.kubernetes.io/auth-url: "https://portal.example.com/ingress/auth"
