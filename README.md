@@ -9,7 +9,7 @@ It provides **centralized login, RBAC, and discovery** of all engineering dashbo
 - **Go Portal** stateless SSO and authorization logic  
 - **Ingress-NGINX external OAuth** seamless authentication enforcement for internal apps  
 
-Users authenticate once and gain access to all authorized apps without remembering ingress URLs.
+### Users authenticate once and gain access to all authorized apps without remembering ingress URLs.
 ---
 
 ### How it looks:
