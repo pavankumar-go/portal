@@ -42,23 +42,23 @@ apps:
   - name: Argo CD
     description: Kubernetes-native continuous deployment (CD) tool
     env:
-      - name: dev
-        upstream: https://internal-argocd.dev.example.com
-        groups:
-          - "infraops@example.com"
-          - "engineering@example.com"
-        emails:
-          - "alice@example.com"
-          - "bob@example.com"
-      - name: qa
-        upstream: https://internal-argocd.qa.example.com
-        groups:
-          - "infraops@example.com"
-          - "engineering@example.com"
-      - name: prod
-        upstream: https://int-argocd.prod.example.com
-        groups:
-          - "infraops@example.com"
+      - dev:
+          upstream: https://internal-argocd.dev.example.com
+          groups:
+            - "infraops@example.com"
+            - "engineering@example.com"
+          emails:
+            - "alice@example.com"
+            - "bob@example.com"
+      - qa:
+          upstream: https://internal-argocd.qa.example.com
+          groups:
+            - "infraops@example.com"
+            - "engineering@example.com"
+      - prod:
+          upstream: https://int-argocd.prod.example.com
+          groups:
+            - "infraops@example.com"
 ```
 
 ## Ingress Integration Example
