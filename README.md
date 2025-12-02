@@ -43,22 +43,22 @@ apps:
     description: Kubernetes-native continuous deployment (CD) tool
     env:
       - dev:
-          upstream: https://internal-argocd.dev.example.com
+          upstream: https://internal-argocd.dev.yourdomain.com
           groups:
-            - "infraops@example.com"
-            - "engineering@example.com"
+            - "infraops@yourdomain.com"
+            - "engineering@yourdomain.com"
           emails:
-            - "alice@example.com"
-            - "bob@example.com"
+            - "alice@yourdomain.com"
+            - "bob@yourdomain.com"
       - qa:
-          upstream: https://internal-argocd.qa.example.com
+          upstream: https://internal-argocd.qa.yourdomain.com
           groups:
-            - "infraops@example.com"
-            - "engineering@example.com"
+            - "infraops@yourdomain.com"
+            - "engineering@yourdomain.com"
       - prod:
-          upstream: https://int-argocd.prod.example.com
+          upstream: https://int-argocd.prod.yourdomain.com
           groups:
-            - "infraops@example.com"
+            - "infraops@yourdomain.com"
 ```
 
 ## Ingress Integration Example
@@ -76,7 +76,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: int-rundeck.prod.vida.id
+  - host: int-rundeck.yourdomain.com
     http:
       paths:
       - backend:
@@ -90,8 +90,8 @@ spec:
   ...
   ...
 nginx.ingress.kubernetes.io/auth-response-headers: "Set-Cookie" # Also provides "X-Portal-Jwt-Assertion, X-Portal-Claim-Email,X-Portal-Claim-Groups,X-Portal-Claim-Name"
-nginx.ingress.kubernetes.io/auth-signin: "https://portal.example.com/login"
-nginx.ingress.kubernetes.io/auth-url: "https://portal.example.com/ingress/auth"
+nginx.ingress.kubernetes.io/auth-signin: "https://portal.yourdomain.com/login"
+nginx.ingress.kubernetes.io/auth-url: "https://portal.yourdomain.com/ingress/auth"
 
 # optional if you want to enable jwt based auto user login in your app (example: in Grafana, Rundeck)
 nginx.ingress.kubernetes.io/configuration-snippet: |
