@@ -488,11 +488,15 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var targetHost *url.URL
 	// Determine which app is being accessed from headers set by NGINX
-	targetHost, _ := url.Parse(r.Header.Get("X-Original-Url"))
+	targetHost, _ = url.Parse(r.Header.Get("X-Original-Url"))
 	if targetHost.Host == "" {
-		http.Error(w, "Missing X-Original-Url header", http.StatusBadRequest)
-		return
+		targetHost.Host = r.Header.Get("X-Forwarded-Host")
+		if targetHost.Host == "" {
+			http.Error(w, "Missing X-Original-Url or X-Forwarded-Host header", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Check authorization for the target application
