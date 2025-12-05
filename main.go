@@ -459,22 +459,62 @@ func loggingMiddleware(next http.Handler) http.Handler {
 				email = claims.Email
 			}
 		}
-		log.Printf("%s %s from %s (user=%s)", r.Method, r.URL.Path, r.RemoteAddr, email)
+		log.Printf("%s %s %s from %s (user=%s)", r.Method, r.Referer(), r.RequestURI, r.Header.Get("X-Forwarded-For"), email)
 		next.ServeHTTP(w, r)
 	})
 }
 
+// Helper to reconstruct the full URL from Traefik headers
+func getOriginalURL(r *http.Request) *url.URL {
+	// 1. Try X-Original-Url (Legacy NGINX)
+	if raw := r.Header.Get("X-Original-Url"); raw != "" {
+		u, _ := url.Parse(raw)
+		return u
+	}
+
+	// 2. Build from Standard Headers (Traefik/AWS NLB)
+	u := &url.URL{}
+	u.Scheme = "https"
+	u.Host = r.Header.Get("X-Forwarded-Host")
+	requestURI := r.Header.Get("X-Forwarded-Uri")
+	parsedURI, _ := url.Parse(requestURI)
+	if parsedURI != nil {
+		u.Path = parsedURI.Path
+		u.RawQuery = parsedURI.RawQuery
+	}
+
+	return u
+}
+
 // Authorization Handler
 func authHandler(w http.ResponseWriter, r *http.Request) {
-	// 1. Get the cookie from the request forwarded by NGINX after /login
+	// Check for the cookie
 	c, err := r.Cookie("id_token")
 	if err != nil {
-		// No cookie, user is not authenticated
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		// "id_token cookie not found, user is not authenticated, redirect to login page ...")
+		loginPortal, _ := url.Parse(*redirectURL)
+		loginPortalURL := fmt.Sprintf("https://%s/login", loginPortal.Host)
+		targetURL := getOriginalURL(r)
+		if targetURL.Host == "" {
+			// Fallback: If headers are completely missing (local testing)
+			targetURL.Host = r.Host
+		}
+		
+		acceptHeader := r.Header.Get("Accept")
+		// If client accepts JSON, return 401 (Don't redirect APIs)
+		if strings.Contains(acceptHeader, "application/json") {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Construct: https://portal.example.com/login?rd=https://app.example.com/path
+		redirectParam := targetURL.String()
+		finalRedirectURL := fmt.Sprintf("%s?rd=%s", loginPortalURL, url.QueryEscape(redirectParam))
+		http.Redirect(w, r, finalRedirectURL, http.StatusFound)
 		return
 	}
-	rawIDToken := c.Value
 
+	rawIDToken := c.Value
 	idTok, err := idVerifier.Verify(r.Context(), rawIDToken)
 	if err != nil {
 		// Invalid token
@@ -492,7 +532,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	// Determine which app is being accessed from headers set by NGINX
 	targetHost, _ = url.Parse(r.Header.Get("X-Original-Url"))
 	if targetHost.Host == "" {
-		targetHost.Host = r.Header.Get("X-Forwarded-Host")
+		targetHost.Host = r.Header.Get("X-Forwarded-Host") // Determine which app is being accessed from headers set by non-NGINX LBs
 		if targetHost.Host == "" {
 			http.Error(w, "Missing X-Original-Url or X-Forwarded-Host header", http.StatusBadRequest)
 			return
