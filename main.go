@@ -491,7 +491,13 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	// Check for the cookie
 	c, err := r.Cookie("id_token")
 	if err != nil {
-		// "id_token cookie not found, user is not authenticated, redirect to login page ...")
+		// Check if the client was Nginx Ingress, It expects 401
+		if r.Header.Get("X-Sent-From") == "nginx-ingress-controller" {
+			http.Error(w, "User Unauthorized", http.StatusUnauthorized)
+		}
+
+		// For rest of the clients, force redirect to sign-in
+		log.Println("id_token cookie not found, user is not authenticated, redirect to login page ...",)
 		loginPortal, _ := url.Parse(*redirectURL)
 		loginPortalURL := fmt.Sprintf("https://%s/login", loginPortal.Host)
 		targetURL := getOriginalURL(r)
@@ -499,13 +505,14 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 			// Fallback: If headers are completely missing (local testing)
 			targetURL.Host = r.Host
 		}
-		
+
 		acceptHeader := r.Header.Get("Accept")
 		// If client accepts JSON, return 401 (Don't redirect APIs)
 		if strings.Contains(acceptHeader, "application/json") {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+
 
 		// Construct: https://portal.example.com/login?rd=https://app.example.com/path
 		redirectParam := targetURL.String()
